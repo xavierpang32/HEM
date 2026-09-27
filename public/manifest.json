@@ -1,16 +1,16 @@
 {
-  "id": "/HEM/app",
   "name": "Hem",
   "short_name": "Hem",
-  "description": "A private ledger for latex and modestwear.",
-  "start_url": "/HEM/",
-  "scope": "/HEM/",
+  "description": "A private ledger for latex and modestwear, with color and sheet thickness.",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#100e0c",
   "theme_color": "#100e0c",
   "icons": [
-    { "src": "/HEM/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/HEM/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/HEM/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

@@ -12,8 +12,15 @@ if (root) {
   );
 }
 
-if (import.meta.env.PROD && "serviceWorker" in navigator) {
+if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    void navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`);
+    void navigator.serviceWorker.getRegistrations().then(async (regs) => {
+      await Promise.all(
+        regs
+          .filter((reg) => !reg.active?.scriptURL.endsWith("/service-worker.js"))
+          .map((reg) => reg.unregister()),
+      );
+      await navigator.serviceWorker.register("service-worker.js").catch(() => undefined);
+    });
   });
 }
