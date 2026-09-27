@@ -37,10 +37,7 @@ export function WardrobeApp() {
   const looks = useWardrobe((s) => s.looks);
   const sort = useWardrobe((s) => s.sort);
   const lookSort = useWardrobe((s) => s.lookSort);
-  const isSample = useWardrobe((s) => s.isSample);
   const storageError = useWardrobe((s) => s.storageError);
-  const dismissSample = useWardrobe((s) => s.dismissSample);
-  const eraseAll = useWardrobe((s) => s.eraseAll);
   const clearNotice = useWardrobe((s) => s.clearNotice);
 
   const [tab, setTab] = useState<Tab>("closet");
@@ -120,13 +117,6 @@ export function WardrobeApp() {
                 <Settings className="size-5" />
               </button>
             </div>
-            {isSample ? (
-              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl bg-accent-soft px-3 py-2 text-sm">
-                <span className="flex-1">{c.sample}</span>
-                <button type="button" className="h-9 rounded-full px-2" onClick={dismissSample}>{c.dismissSample}</button>
-                <button type="button" className="h-9 rounded-full px-2 text-accent" onClick={eraseAll}>{c.clearSample}</button>
-              </div>
-            ) : null}
             {storageError ? (
               <button type="button" className="mt-3 w-full rounded-2xl bg-accent-soft px-3 py-2 text-left text-sm" onClick={clearNotice}>
                 {c.storageFull}

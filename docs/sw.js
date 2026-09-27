@@ -1,4 +1,4 @@
-const CACHE = "hem-v1";
+const CACHE = "hem-v2";
 const SHELL = ["/HEM/", "/HEM/index.html", "/HEM/manifest.json", "/HEM/favicon.svg", "/HEM/icon-192.png", "/HEM/icon-512.png"];
 
 self.addEventListener("install", (event) => {

@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { z } from "zod";
 import { defaultCatalog, normalizeCatalog, type Catalog } from "./catalog";
-import { SAMPLE_LOOKS, SAMPLE_PIECES } from "./sample";
 import {
   SEARCH_FIELDS,
   SORTS,
@@ -49,7 +48,6 @@ type Persisted = {
   sort: SortKey;
   lookSort: SortKey;
   searchField: SearchField;
-  isSample: boolean;
   catalog: Catalog;
 };
 
@@ -61,7 +59,6 @@ type WardrobeState = Persisted & {
   setLookSort: (sort: SortKey) => void;
   setSearchField: (field: SearchField) => void;
   clearNotice: () => void;
-  dismissSample: () => void;
   addPiece: (input: PieceInput) => string;
   updatePiece: (id: string, input: PieceInput) => void;
   removePieces: (ids: string[]) => void;
@@ -179,16 +176,43 @@ function owned<T extends { name: string; notes: string; nameZh?: string; notesZh
   };
 }
 
+const SAMPLE_IDS = new Set([
+  "p-catsuit",
+  "p-mask",
+  "p-gloves",
+  "p-maid",
+  "p-boots",
+  "p-sheer",
+  "p-hijab",
+  "p-burqa",
+  "p-abaya",
+  "p-khimar",
+  "p-cap",
+  "p-niqab",
+  "l-black",
+  "l-maid",
+  "l-covered",
+  "l-day",
+]);
+
+function withoutSamples(pieces: Piece[] | undefined, looks: Look[] | undefined) {
+  return {
+    pieces: (pieces ?? []).filter((piece) => !SAMPLE_IDS.has(piece.id)),
+    looks: (looks ?? [])
+      .filter((look) => !SAMPLE_IDS.has(look.id))
+      .map((look) => ({ ...look, pieceIds: look.pieceIds.filter((id) => !SAMPLE_IDS.has(id)) })),
+  };
+}
+
 export const useWardrobe = create<WardrobeState>()(
   persist(
     (set, get) => ({
-      pieces: SAMPLE_PIECES,
-      looks: SAMPLE_LOOKS,
+      pieces: [],
+      looks: [],
       lang: "en",
       sort: "newest",
       lookSort: "newest",
       searchField: "all",
-      isSample: true,
       catalog: defaultCatalog(),
       storageError: false,
       notice: null,
@@ -200,7 +224,6 @@ export const useWardrobe = create<WardrobeState>()(
       setLookSort: (lookSort) => set({ lookSort }),
       setSearchField: (searchField) => set({ searchField }),
       clearNotice: () => set({ notice: null, storageError: false }),
-      dismissSample: () => set({ isSample: false }),
       addPiece: (input) => {
         const id = uid();
         const piece: Piece = {
@@ -211,12 +234,11 @@ export const useWardrobe = create<WardrobeState>()(
           createdAt: Date.now(),
           order: nextOrder(get().pieces),
         };
-        set({ pieces: [piece, ...get().pieces], isSample: false });
+        set({ pieces: [piece, ...get().pieces] });
         return id;
       },
       updatePiece: (id, input) => {
         set({
-          isSample: false,
           pieces: get().pieces.map((piece) => {
             if (piece.id !== id) return piece;
             const kept = owned(piece, input.name.trim(), input.notes);
@@ -235,7 +257,6 @@ export const useWardrobe = create<WardrobeState>()(
       removePieces: (ids) => {
         const drop = new Set(ids);
         set({
-          isSample: false,
           pieces: get().pieces.filter((piece) => !drop.has(piece.id)),
           looks: get().looks.map((look) => ({
             ...look,
@@ -262,12 +283,11 @@ export const useWardrobe = create<WardrobeState>()(
           createdAt: Date.now(),
           order: nextOrder(get().looks),
         };
-        set({ looks: [look, ...get().looks], isSample: false });
+        set({ looks: [look, ...get().looks] });
         return id;
       },
       updateLook: (id, input) => {
         set({
-          isSample: false,
           looks: get().looks.map((look) => {
             if (look.id !== id) return look;
             const kept = owned(look, input.name.trim(), input.notes);
@@ -277,7 +297,7 @@ export const useWardrobe = create<WardrobeState>()(
       },
       removeLooks: (ids) => {
         const drop = new Set(ids);
-        set({ isSample: false, looks: get().looks.filter((look) => !drop.has(look.id)) });
+        set({ looks: get().looks.filter((look) => !drop.has(look.id)) });
       },
       commitLookOrder: (ids) => {
         const rank = new Map(ids.map((id, index) => [id, index]));
@@ -288,7 +308,7 @@ export const useWardrobe = create<WardrobeState>()(
           ),
         });
       },
-      eraseAll: () => set({ pieces: [], looks: [], isSample: false }),
+      eraseAll: () => set({ pieces: [], looks: [] }),
       setCatalog: (catalog) => set({ catalog: normalizeCatalog(catalog) }),
       resetCatalog: () => set({ catalog: defaultCatalog() }),
       exportBackup: () => {
@@ -321,7 +341,6 @@ export const useWardrobe = create<WardrobeState>()(
           lookSort: parsed.data.lookSort ?? "custom",
           searchField: parsed.data.searchField ?? get().searchField,
           catalog: parsed.data.catalog ? normalizeCatalog(parsed.data.catalog) : get().catalog,
-          isSample: false,
           notice: "imported",
         });
         return true;
@@ -338,15 +357,17 @@ export const useWardrobe = create<WardrobeState>()(
         sort: state.sort,
         lookSort: state.lookSort,
         searchField: state.searchField,
-        isSample: state.isSample,
         catalog: state.catalog,
       }),
       merge: (persisted, current) => {
         if (!persisted || typeof persisted !== "object") return current;
-        const saved = persisted as Partial<Persisted>;
+        const saved = persisted as Partial<Persisted> & { isSample?: boolean };
+        delete saved.isSample;
+        const cleaned = withoutSamples(saved.pieces ?? current.pieces, saved.looks ?? current.looks);
         return {
           ...current,
           ...saved,
+          ...cleaned,
           lang: "en",
           catalog: normalizeCatalog(saved.catalog ?? current.catalog),
         };
