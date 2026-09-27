@@ -10,6 +10,51 @@ import { PieceDetail, PieceForm } from "./piece-view";
 import { SettingsDialog } from "./settings";
 import { useCopy } from "./use-copy";
 
+type InstallPrompt = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
+
+let deferredInstall: InstallPrompt | null = null;
+const installListeners = new Set<(event: InstallPrompt | null) => void>();
+
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstall = event as InstallPrompt;
+    installListeners.forEach((listener) => listener(deferredInstall));
+  });
+  window.addEventListener("appinstalled", () => {
+    deferredInstall = null;
+    installListeners.forEach((listener) => listener(null));
+  });
+}
+
+function useInstallPrompt() {
+  const [event, setEvent] = useState<InstallPrompt | null>(deferredInstall);
+  const [standalone, setStandalone] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia("(display-mode: standalone)");
+    const sync = () => setStandalone(media.matches);
+    sync();
+    installListeners.add(setEvent);
+    media.addEventListener("change", sync);
+    return () => {
+      installListeners.delete(setEvent);
+      media.removeEventListener("change", sync);
+    };
+  }, []);
+  return {
+    canInstall: Boolean(event) && !standalone,
+    install: async () => {
+      if (!event) return;
+      await event.prompt();
+      deferredInstall = null;
+      setEvent(null);
+    },
+  };
+}
+
 type Tab = "closet" | "looks" | "overview";
 type View =
   | { kind: "browse" }
@@ -39,6 +84,7 @@ export function WardrobeApp() {
   const lookSort = useWardrobe((s) => s.lookSort);
   const storageError = useWardrobe((s) => s.storageError);
   const clearNotice = useWardrobe((s) => s.clearNotice);
+  const { canInstall, install } = useInstallPrompt();
 
   const [tab, setTab] = useState<Tab>("closet");
   const [view, setView] = useState<View>({ kind: "browse" });
@@ -113,9 +159,16 @@ export function WardrobeApp() {
                   {tab === "looks" ? c.looks : tab === "overview" ? c.tagline : c.pieces(pieces.length)}
                 </p>
               </div>
-              <button type="button" className="grid size-11 place-items-center rounded-full border border-line" aria-label={c.settings} onClick={() => setSettings(true)}>
-                <Settings className="size-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {canInstall ? (
+                  <button type="button" className="h-11 rounded-full bg-accent px-4 text-sm font-medium text-ink" onClick={() => void install()}>
+                    {c.install}
+                  </button>
+                ) : null}
+                <button type="button" className="grid size-11 place-items-center rounded-full border border-line" aria-label={c.settings} onClick={() => setSettings(true)}>
+                  <Settings className="size-5" />
+                </button>
+              </div>
             </div>
             {storageError ? (
               <button type="button" className="mt-3 w-full rounded-2xl bg-accent-soft px-3 py-2 text-left text-sm" onClick={clearNotice}>

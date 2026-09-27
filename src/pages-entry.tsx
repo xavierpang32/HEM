@@ -20,7 +20,7 @@ if ("serviceWorker" in navigator) {
           .filter((reg) => !reg.active?.scriptURL.endsWith("/service-worker.js"))
           .map((reg) => reg.unregister()),
       );
-      await navigator.serviceWorker.register("service-worker.js").catch(() => undefined);
+      await navigator.serviceWorker.register("/HEM/app/service-worker.js").catch(() => undefined);
     });
   });
 }

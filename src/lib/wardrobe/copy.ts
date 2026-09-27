@@ -6,6 +6,7 @@ const en = {
   looks: "Looks",
   overview: "Overview",
   settings: "Settings",
+  install: "Install",
   about: "About",
   pieces: (n: number) => (n === 1 ? "1 piece" : `${n} pieces`),
   ofPieces: (shown: number, total: number) => `${shown} of ${total}`,

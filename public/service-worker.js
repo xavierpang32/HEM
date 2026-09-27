@@ -1,5 +1,5 @@
 // Hem — offline app shell, same shape as Camera-tory.
-var CACHE_NAME = "hem-cache-v4";
+var CACHE_NAME = "hem-cache-v5";
 var ASSETS = [
   "./",
   "./index.html",
