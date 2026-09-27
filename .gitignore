@@ -10,5 +10,4 @@ AGENTS.md
 *.log
 dist
 .output
-docs
 .node_modules.lock
