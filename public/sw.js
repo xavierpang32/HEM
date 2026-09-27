@@ -1,9 +1,13 @@
-const CACHE = "hem-v2";
-const SHELL = ["/HEM/", "/HEM/index.html", "/HEM/manifest.json", "/HEM/favicon.svg", "/HEM/icon-192.png", "/HEM/icon-512.png"];
+const CACHE = "hem-v3";
+const SHELL = ["/HEM/", "/HEM/index.html", "/HEM/favicon.svg", "/HEM/icon-192.png", "/HEM/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()),
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll(SHELL))
+      .catch(() => undefined)
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -18,6 +22,8 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  const path = new URL(event.request.url).pathname;
+  if (path.endsWith("/manifest.json") || path.endsWith("/sw.js")) return;
   event.respondWith(
     fetch(event.request)
       .then((response) => {
